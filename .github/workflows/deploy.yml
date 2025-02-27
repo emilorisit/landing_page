@@ -1,0 +1,44 @@
+name: Deploy to Domeneshop
+
+on:
+  push:
+    branches:
+      - main
+
+# Limit permissions to minimum required
+permissions:
+  contents: read
+  deployments: write
+
+# Ensure only one deployment runs at a time
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: SFTP Deploy
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
+          protocol: sftp
+          server-dir: /www/
+          local-dir: ./
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            README.md
+            .env
+            __pycache__/**
+            *.pyc
+            **/.env*
+            **/*.key
+            **/*.pem
+            **/secrets.*
