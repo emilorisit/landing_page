@@ -19,28 +19,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Ensure SSH Known Hosts is Updated
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H sftp.domeneshop.no >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          echo "SSH key fingerprint added to known hosts."
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Ensure Directories Exist on Remote
+      - name: Create Remote Directories (if needed)
         run: |
-          sudo apt-get update && sudo apt-get install -y lftp
-          echo "Testing SFTP connection..."
-          lftp -d -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://sftp.domeneshop.no -e "
+          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://sftp.domeneshop.no -e "
           set sftp:auto-confirm yes;
-          set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null';
-          set net:max-retries 2;
-          set net:reconnect-interval-base 5;
+          set sftp:connect-program 'ssh -o StrictHostKeyChecking=no';
           open -p 22 -s sftp://sftp.domeneshop.no;
-          ls /www;
           mkdir -p /www/static /www/templates;
           bye"
 
-      - name: SFTP Deploy
+      - name: Deploy Files via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: sftp.domeneshop.no
@@ -50,4 +41,4 @@ jobs:
           remote_path: '/www'
           port: 22
           sftp_only: true
-          sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o PasswordAuthentication=yes -o ConnectTimeout=5'
+          sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
