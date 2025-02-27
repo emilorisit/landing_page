@@ -8,7 +8,7 @@ def index():
     social_links = {
         'linkedin': 'https://www.linkedin.com/in/emilniclas/',
         'github': 'https://github.com/emilorisit',
-        'x': 'https://x.com/your-handle',  # X/Twitter handle not provided yet
+        'x': 'https://x.com/emilorisit',  # Updated X/Twitter handle
         'instagram': 'https://www.instagram.com/emilorisit/',
         'email': 'contact.scheming298@passinbox.com'
     }
