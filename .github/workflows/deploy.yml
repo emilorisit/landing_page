@@ -21,9 +21,10 @@ jobs:
 
       - name: Ensure Directories Exist on Remote
         run: |
-          sudo apt-get install -y lftp
-          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" -e "
+          sudo apt-get update && sudo apt-get install -y lftp
+          lftp -d -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" -e "
           set sftp:auto-confirm yes;
+          set ftp:passive-mode on;
           open -p 22 -s sftp://${{ secrets.DOMENESHOP_SFTP_HOST }};
           mkdir -p /www/static /www/templates;
           bye"
