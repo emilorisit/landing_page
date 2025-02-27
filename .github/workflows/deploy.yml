@@ -22,19 +22,20 @@ jobs:
       - name: Ensure SSH Known Hosts is Updated
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.DOMENESHOP_SFTP_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H sftp.domeneshop.no >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
+          echo "SSH key fingerprint added to known hosts."
 
       - name: Ensure Directories Exist on Remote
         run: |
           sudo apt-get update && sudo apt-get install -y lftp
           echo "Testing SFTP connection..."
-          lftp -d -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://${{ secrets.DOMENESHOP_SFTP_HOST }} -e "
+          lftp -d -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://sftp.domeneshop.no -e "
           set sftp:auto-confirm yes;
           set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null';
           set net:max-retries 2;
           set net:reconnect-interval-base 5;
-          open -p 22 -s sftp://${{ secrets.DOMENESHOP_SFTP_HOST }};
+          open -p 22 -s sftp://sftp.domeneshop.no;
           ls /www;
           mkdir -p /www/static /www/templates;
           bye"
@@ -42,7 +43,7 @@ jobs:
       - name: SFTP Deploy
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          server: sftp.domeneshop.no
           username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
           password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
           local_path: './*'
