@@ -26,7 +26,7 @@ jobs:
 
       - name: Create Remote Directories (if needed)
         run: |
-          lftp -u "${{ secrets.DOMENESHOP_FTP_USERNAME }},${{ secrets.DOMENESHOP_FTP_PASSWORD }}" ftp://ftp.domeneshop.no -e "
+          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" ftp://ftp.domeneshop.no -e "
           set ftp:ssl-allow no;
           mkdir -p /www/static /www/templates;
           bye"
