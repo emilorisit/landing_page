@@ -19,19 +19,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Ensure SSH Known Hosts is Updated
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.DOMENESHOP_SFTP_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
       - name: Ensure Directories Exist on Remote
         run: |
           sudo apt-get update && sudo apt-get install -y lftp
           echo "Testing SFTP connection..."
           lftp -d -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://${{ secrets.DOMENESHOP_SFTP_HOST }} -e "
           set sftp:auto-confirm yes;
-          set ftp:passive-mode off;   # Switch to active mode if passive isn't working
-          set net:timeout 15;
+          set sftp:connect-program 'ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null';
           set net:max-retries 2;
           set net:reconnect-interval-base 5;
-          set net:reconnect-interval-multiplier 1;
           open -p 22 -s sftp://${{ secrets.DOMENESHOP_SFTP_HOST }};
-          ls /www;   # Debug: check if /www is accessible
+          ls /www;
           mkdir -p /www/static /www/templates;
           bye"
 
