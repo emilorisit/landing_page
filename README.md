@@ -2,6 +2,10 @@
 
 A minimalist personal homepage showcasing professional and social media profiles with a clean, lightweight design.
 
+## Development
+
+This is a static website built with HTML, CSS, and Font Awesome icons. The site is hosted on Domeneshop and automatically deployed via SFTP when changes are pushed to the main branch.
+
 ## Deployment
 
 This website is automatically deployed to Domeneshop via SFTP when changes are pushed to the main branch. The deployment is handled by GitHub Actions.
@@ -31,12 +35,6 @@ To add these secrets securely:
 
 The deployment workflow will automatically copy the website files to the `/www` directory on your Domeneshop hosting.
 
-## Development
+## Local Development
 
-To run the website locally:
-
-```bash
-python main.py
-```
-
-The website will be available at `http://localhost:5000`.
+To test the website locally, simply open `index.html` in your web browser.

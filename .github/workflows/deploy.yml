@@ -5,10 +5,12 @@ on:
     branches:
       - main
 
+# Limit permissions to minimum required
 permissions:
   contents: read
   deployments: write
 
+# Ensure only one deployment runs at a time
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true

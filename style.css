@@ -1,0 +1,35 @@
+/* Minimal styles */
+.profile-picture {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.social-links {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+}
+
+.social-icon {
+    color: #666;
+    font-size: 1.5rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.social-icon:hover {
+    color: #000;
+}
+
+/* Simple responsive adjustments */
+@media (max-width: 576px) {
+    .social-links {
+        gap: 1.5rem;
+    }
+}
