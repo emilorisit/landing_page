@@ -4,19 +4,18 @@ A minimalist personal homepage showcasing professional and social media profiles
 
 ## Development
 
-This is a static website built with HTML, CSS, and Font Awesome icons. The site is hosted on Domeneshop and automatically deployed via SFTP when changes are pushed to the main branch.
+This is a static website built with HTML, CSS, and Font Awesome icons. The site is hosted on Domeneshop and automatically deployed via FTP when changes are pushed to the main branch.
 
 ## Deployment
 
-This website is automatically deployed to Domeneshop via SFTP when changes are pushed to the main branch. The deployment is handled by GitHub Actions.
+This website is automatically deployed to Domeneshop via FTP when changes are pushed to the main branch. The deployment is handled by GitHub Actions.
 
 ### Setup Requirements
 
 To enable automatic deployment, you need to set up the following secrets in your GitHub repository:
 
-1. `DOMENESHOP_SFTP_HOST`: Your Domeneshop SFTP server hostname
-2. `DOMENESHOP_SFTP_USERNAME`: Your Domeneshop SFTP username
-3. `DOMENESHOP_SFTP_PASSWORD`: Your Domeneshop SFTP password
+1. `DOMENESHOP_FTP_USERNAME`: Your Domeneshop FTP username
+2. `DOMENESHOP_FTP_PASSWORD`: Your Domeneshop FTP password
 
 To add these secrets securely:
 1. Go to your GitHub repository
