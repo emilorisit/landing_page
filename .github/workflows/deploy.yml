@@ -24,8 +24,9 @@ jobs:
         with:
           server: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-          ssh_private_key: ${{ secrets.DOMENESHOP_SSH_PRIVATE_KEY }}
+          password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
           local_path: './*'
           remote_path: '/www'
           port: 22
-          sftpArgs: '-o ConnectTimeout=5'
+          sftp_only: true
+          sftpArgs: '-o PubkeyAuthentication=no -o PasswordAuthentication=yes -o ConnectTimeout=5'
