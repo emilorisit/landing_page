@@ -8,12 +8,14 @@ def index():
     social_links = {
         'linkedin': 'https://linkedin.com/in/your-profile',
         'github': 'https://github.com/your-username',
-        'twitter': 'https://twitter.com/your-handle',
+        'x': 'https://x.com/your-handle',
+        'instagram': 'https://instagram.com/your-handle',
+        'email': 'your.email@example.com'
     }
-    
+
     # LinkedIn profile picture URL (replace with actual URL)
     profile_pic = "https://via.placeholder.com/150"
-    
+
     return render_template('index.html', 
                          social_links=social_links,
                          profile_pic=profile_pic)

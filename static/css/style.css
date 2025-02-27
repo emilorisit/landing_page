@@ -18,19 +18,28 @@
     margin-top: 2rem;
 }
 
-.social-links a {
+.social-icon {
+    color: var(--bs-secondary);
+    margin: 0 1rem;
+    text-decoration: none;
     transition: all 0.3s ease;
 }
 
-.social-links a:hover {
+.social-icon:hover {
+    color: var(--bs-primary);
     transform: translateY(-2px);
 }
 
 /* Responsive adjustments */
 @media (max-width: 576px) {
-    .social-links a {
-        display: block;
-        margin: 1rem auto;
-        width: 200px;
+    .social-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .social-icon {
+        margin: 0.5rem;
     }
 }

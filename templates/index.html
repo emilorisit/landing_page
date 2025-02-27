@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>enh.no - Personal Homepage</title>
-    
+    <title>Emil Niclas Hofseth - Personal Homepage</title>
+
     <!-- Bootstrap CSS (Replit theme) -->
     <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
-    
+
     <!-- Font Awesome for social icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -23,23 +23,28 @@
             </div>
 
             <!-- Name -->
-            <h1 class="display-4 mb-4">Welcome to enh.no</h1>
+            <h1 class="display-4 mb-4">Emil Niclas Hofseth</h1>
 
             <!-- Social Media Links -->
             <div class="social-links">
-                <a href="{{ social_links.linkedin }}" target="_blank" class="btn btn-outline-secondary mx-2">
-                    <i class="fab fa-linkedin fa-lg"></i>
-                    <span class="ms-2">LinkedIn</span>
+                <a href="{{ social_links.linkedin }}" target="_blank" class="social-icon">
+                    <i class="fab fa-linkedin fa-2x"></i>
                 </a>
-                
-                <a href="{{ social_links.github }}" target="_blank" class="btn btn-outline-secondary mx-2">
-                    <i class="fab fa-github fa-lg"></i>
-                    <span class="ms-2">GitHub</span>
+
+                <a href="{{ social_links.github }}" target="_blank" class="social-icon">
+                    <i class="fab fa-github fa-2x"></i>
                 </a>
-                
-                <a href="{{ social_links.twitter }}" target="_blank" class="btn btn-outline-secondary mx-2">
-                    <i class="fab fa-twitter fa-lg"></i>
-                    <span class="ms-2">Twitter</span>
+
+                <a href="{{ social_links.x }}" target="_blank" class="social-icon">
+                    <i class="fab fa-x-twitter fa-2x"></i>
+                </a>
+
+                <a href="{{ social_links.instagram }}" target="_blank" class="social-icon">
+                    <i class="fab fa-instagram fa-2x"></i>
+                </a>
+
+                <a href="mailto:{{ social_links.email }}" class="social-icon">
+                    <i class="fas fa-envelope fa-2x"></i>
                 </a>
             </div>
         </div>
