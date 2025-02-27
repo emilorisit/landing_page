@@ -22,8 +22,9 @@ jobs:
       - name: Ensure Directories Exist on Remote
         run: |
           sudo apt-get install -y lftp
-          lftp -c "
-          open -u ${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }} sftp://${{ secrets.DOMENESHOP_SFTP_HOST }};
+          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" -e "
+          set sftp:auto-confirm yes;
+          open -p 22 -s sftp://${{ secrets.DOMENESHOP_SFTP_HOST }};
           mkdir -p /www/static /www/templates;
           bye"
       
@@ -37,4 +38,4 @@ jobs:
           remote_path: '/www'
           port: 22
           sftp_only: true
-          sftpArgs: '-o PubkeyAuthentication=no -o PasswordAuthentication=yes -o ConnectTimeout=5'
+          sftpArgs: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o PasswordAuthentication=yes -o ConnectTimeout=5'
