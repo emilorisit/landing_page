@@ -19,6 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Ensure Directories Exist on Remote
+        run: |
+          sudo apt-get install -y lftp
+          lftp -c "
+          open -u ${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }} sftp://${{ secrets.DOMENESHOP_SFTP_HOST }};
+          mkdir -p /www/static /www/templates;
+          bye"
+      
       - name: SFTP Deploy
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
