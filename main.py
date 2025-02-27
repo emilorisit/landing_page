@@ -6,11 +6,11 @@ app = Flask(__name__)
 def index():
     # Social media links
     social_links = {
-        'linkedin': 'https://linkedin.com/in/your-profile',
-        'github': 'https://github.com/your-username',
-        'x': 'https://x.com/your-handle',
-        'instagram': 'https://instagram.com/your-handle',
-        'email': 'your.email@example.com'
+        'linkedin': 'https://www.linkedin.com/in/emilniclas/',
+        'github': 'https://github.com/emilorisit',
+        'x': 'https://x.com/your-handle',  # X/Twitter handle not provided yet
+        'instagram': 'https://www.instagram.com/emilorisit/',
+        'email': 'contact.scheming298@passinbox.com'
     }
 
     # LinkedIn profile picture URL
