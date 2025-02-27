@@ -1,45 +1,30 @@
-/* Custom styles to complement Bootstrap */
-
-.profile-picture-container {
-    width: 150px;
-    height: 150px;
-    margin: 0 auto;
-    overflow: hidden;
-}
-
+/* Minimal styles */
 .profile-picture {
-    width: 100%;
-    height: 100%;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
     object-fit: cover;
-    border: 3px solid var(--bs-secondary);
 }
 
 .social-links {
-    margin-top: 2rem;
+    margin-top: 1.5rem;
 }
 
 .social-icon {
-    color: var(--bs-secondary);
-    margin: 0 1rem;
+    color: #666;
+    font-size: 1.5rem;
+    margin: 0 0.8rem;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: color 0.2s ease;
 }
 
 .social-icon:hover {
-    color: var(--bs-primary);
-    transform: translateY(-2px);
+    color: #000;
 }
 
-/* Responsive adjustments */
+/* Simple responsive adjustments */
 @media (max-width: 576px) {
-    .social-links {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 1rem;
-    }
-
     .social-icon {
-        margin: 0.5rem;
+        margin: 0 0.5rem;
     }
 }
