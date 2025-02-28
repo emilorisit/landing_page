@@ -1,3 +1,44 @@
+name: Deploy to Domeneshop
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install LFTP
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Add SSH fingerprint to known_hosts
+        env:
+          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
+        run: |
+          echo "Ensuring SSH directory exists..."
+          mkdir -p ~/.ssh
+
+          echo "Fetching SSH key from server..."
+          ssh-keyscan -H $SFTP_HOST > ~/.ssh/known_hosts
+
+          echo "Received SSH fingerprint from server:"
+          ssh-keygen -lf ~/.ssh/known_hosts | tee received_fingerprint.log
+
+          echo "Expected SSH fingerprint: $SSH_FINGERPRINT"
+
+          echo "Verifying fingerprint..."
+          if ! grep -q "$SSH_FINGERPRINT" received_fingerprint.log; then
+            echo "Error: Host key does not match expected fingerprint!"
+            exit 1
+          fi
+          echo "Fingerprint verified."
+
       - name: Deploy via SFTP
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
@@ -8,24 +49,24 @@
           lftp -c "
             open -u $SFTP_USER,$SFTP_PASS sftp://$SFTP_HOST
             mirror -R --delete --verbose ./ /www \
-              --exclude .git/ \
-              --exclude .gitignore \
-              --exclude README.md \
-              --exclude LICENSE \
-              --exclude *.yml \
-              --exclude *.sh \
-              --exclude node_modules/ \
-              --exclude package.json \
-              --exclude package-lock.json \
-              --exclude yarn.lock \
-              --exclude tests/ \
-              --exclude __tests__/ \
-              --exclude coverage/ \
-              --exclude .vscode/ \
-              --exclude .idea/ \
-              --exclude *.log \
-              --exclude .DS_Store \
-              --exclude Thumbs.db \
-              --exclude .*  # Exclude hidden files unless explicitly needed
+              --exclude-glob .git/ \
+              --exclude-glob .gitignore \
+              --exclude-glob README.md \
+              --exclude-glob LICENSE \
+              --exclude-glob *.yml \
+              --exclude-glob *.sh \
+              --exclude-glob node_modules/ \
+              --exclude-glob package.json \
+              --exclude-glob package-lock.json \
+              --exclude-glob yarn.lock \
+              --exclude-glob tests/ \
+              --exclude-glob __tests__/ \
+              --exclude-glob coverage/ \
+              --exclude-glob .vscode/ \
+              --exclude-glob .idea/ \
+              --exclude-glob *.log \
+              --exclude-glob .DS_Store \
+              --exclude-glob Thumbs.db \
+              --exclude-glob '.*'  # Exclude hidden files unless explicitly needed
             bye
           "
