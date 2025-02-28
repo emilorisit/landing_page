@@ -9,21 +9,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout your repository so we can access its content.
-      - name: Checkout code
+      # 1. Checkout the entire repository.
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Verify that the local "www" folder exists.
-      - name: Verify local www folder
-        run: |
-          if [ -d "www" ]; then
-            echo "Local www folder found."
-          else
-            echo "Error: Local www folder not found. Exiting." >&2
-            exit 1
-          fi
-
-      # Step 3: Set up SSH known_hosts for a secure connection.
+      # 2. Set up SSH known_hosts so that we securely connect to the remote server.
       - name: Set up SSH known hosts
         run: |
           mkdir -p ~/.ssh
@@ -34,8 +24,8 @@ jobs:
           }
           echo "SSH known_hosts updated."
 
-      # Step 4: Ensure that the remote "www" folder exists.
-      # This uses sshpass to log in with a password and run 'mkdir -p www' on the remote host.
+      # 3. Ensure the remote 'www' folder exists.
+      #    According to Domeneshop’s documentation, the web‐accessible files must reside in the "www" folder.
       - name: Ensure remote www folder exists
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
@@ -50,14 +40,14 @@ jobs:
           }
           echo "Remote www folder verified."
 
-      # Step 5: Deploy files from the local "www" folder to the remote "www" folder.
-      # The action will recursively copy files and create missing subdirectories as needed.
-      - name: Deploy files via SCP
+      # 4. Deploy all repository files and directories (with their structure)
+      #    This will copy everything from the repo root into the remote "www" folder.
+      - name: Deploy repository content to remote www folder
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
           password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
           port: 22
-          source: "www/"
+          source: "."
           target: "www/"
