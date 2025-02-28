@@ -39,42 +39,31 @@ jobs:
           fi
           echo "Fingerprint verified."
 
-      - name: Deploy via SFTP (Sync & Cleanup)
+      - name: Cleanup Remote Server (Remove Old & Excluded Files)
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
           SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
         run: |
-          echo "Removing files on the server that are now excluded..."
+          echo "Removing files on the server that should not exist..."
           lftp -c "
             open -u $SFTP_USER,$SFTP_PASS sftp://$SFTP_HOST
-            lcd .
             cd /www
-            # Remove files that should no longer exist (newly added exclusions)
-            find . -type f \( \
-              -name '.git' -o \
-              -name '.gitignore' -o \
-              -name 'README.md' -o \
-              -name 'LICENSE' -o \
-              -name '*.yml' -o \
-              -name '*.sh' -o \
-              -name 'node_modules' -o \
-              -name 'package.json' -o \
-              -name 'package-lock.json' -o \
-              -name 'yarn.lock' -o \
-              -name 'tests' -o \
-              -name '__tests__' -o \
-              -name 'coverage' -o \
-              -name '.vscode' -o \
-              -name '.idea' -o \
-              -name '*.log' -o \
-              -name '.DS_Store' -o \
-              -name 'Thumbs.db' -o \
-              -name '.*' \
-            \) -exec rm -rf {} +
+
+            # Remove known exclusions if they exist
+            rm -rf .git .gitignore README.md LICENSE *.yml *.sh node_modules package.json \
+                   package-lock.json yarn.lock tests __tests__ coverage .vscode .idea \
+                   *.log .DS_Store Thumbs.db '.*'
+
             bye
           "
 
+      - name: Deploy via SFTP (Sync Only Changed Files)
+        env:
+          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
+        run: |
           echo "Deploying changed files..."
           lftp -c "
             open -u $SFTP_USER,$SFTP_PASS sftp://$SFTP_HOST
@@ -84,19 +73,4 @@ jobs:
               --exclude-glob README.md \
               --exclude-glob LICENSE \
               --exclude-glob *.yml \
-              --exclude-glob *.sh \
-              --exclude-glob node_modules/ \
-              --exclude-glob package.json \
-              --exclude-glob package-lock.json \
-              --exclude-glob yarn.lock \
-              --exclude-glob tests/ \
-              --exclude-glob __tests__/ \
-              --exclude-glob coverage/ \
-              --exclude-glob .vscode/ \
-              --exclude-glob .idea/ \
-              --exclude-glob *.log \
-              --exclude-glob .DS_Store \
-              --exclude-glob Thumbs.db \
-              --exclude-glob '.*'  # Exclude hidden files unless explicitly needed
-            bye
-          "
+              -
