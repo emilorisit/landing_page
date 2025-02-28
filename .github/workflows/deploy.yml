@@ -2,8 +2,7 @@ name: Deploy to Domeneshop
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -12,44 +11,42 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Verify and Setup Known Hosts
-        id: known_hosts_setup
-        shell: bash
+      - name: Setup and Verify Known Hosts
         run: |
           # Create SSH directory if it doesn't exist
           mkdir -p ~/.ssh
+          echo "Scanning scp.domeneshop.no for its RSA public key..."
+          # Scan the server and store its key temporarily
+          ssh-keyscan -t rsa scp.domeneshop.no > ~/.ssh/known_hosts.tmp 2>/dev/null
 
-          echo "Scanning scp.domeneshop.no for its public key..."
-          # Scan the host for its RSA key and save it temporarily
-          ssh-keyscan -t rsa scp.domeneshop.no > known_hosts.txt 2>/dev/null
-
-          # Extract the fingerprint from the scanned key (strip the "SHA256:" prefix)
-          ACTUAL_FINGERPRINT=$(ssh-keygen -lf known_hosts.txt | awk '{print $2}' | sed 's/SHA256://')
-          echo "Expected fingerprint: ${{ secrets.SSH_FINGERPRINT }}"
+          # Extract the fingerprint from the temporary file
+          ACTUAL_FINGERPRINT=$(ssh-keygen -lf ~/.ssh/known_hosts.tmp | awk '{print $2}')
           echo "Actual fingerprint: $ACTUAL_FINGERPRINT"
+          echo "Expected fingerprint: ${{ secrets.SSH_FINGERPRINT }}"
 
-          # Compare the actual fingerprint with the expected one
-          if [ "$ACTUAL_FINGERPRINT" != "${{ secrets.SSH-fingerprint }}" ]; then
+          if [ "$ACTUAL_FINGERPRINT" != "${{ secrets.SSH_FINGERPRINT }}" ]; then
             echo "Fingerprint mismatch! Aborting deployment."
             exit 1
           fi
 
-          # Save the verified known_hosts entry as an output for later steps
-          echo "KNOWN_HOSTS<<EOF" >> $GITHUB_OUTPUT
-          cat known_hosts.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Use the verified known_hosts file for SFTP
+          mv ~/.ssh/known_hosts.tmp ~/.ssh/known_hosts
+        shell: bash
 
-      - name: Deploy via Rsync over SFTP
-        uses: appleboy/rsync-action@master
-        with:
-          host: ${{ secrets.DOMENESHOP_SFTP_HOST }}
-          username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-          password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
-          # The local directory to sync (adjust as needed)
-          source: "./"
-          # The target remote folder
-          target: "/www"
-          # Archive mode, verbose, compress and delete removed files
-          args: "-avz --delete"
-          # Pass in the verified known_hosts content so that SSH accepts the fingerprint automatically
-          known_hosts: ${{ steps.known_hosts_setup.outputs.KNOWN_HOSTS }}
+      - name: Install lftp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+      - name: Deploy via lftp Mirror (SFTP)
+        env:
+          DOMENESHOP_SFTP_USERNAME: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          DOMENESHOP_SFTP_PASSWORD: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
+        run: |
+          # Tell lftp to use our verified known_hosts file
+          export SFTP_KNOWN_HOSTS=~/.ssh/known_hosts
+          # Connect to the SFTP server (using scp.domeneshop.no as required) and mirror the local repo to /www.
+          lftp -u "$DOMENESHOP_SFTP_USERNAME,$DOMENESHOP_SFTP_PASSWORD" sftp://scp.domeneshop.no <<'EOF'
+          mirror -R --delete --verbose ./ /www
+          quit
+EOF
