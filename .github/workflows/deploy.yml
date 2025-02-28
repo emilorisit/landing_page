@@ -1,13 +1,13 @@
-      - name: Deploy via SFTP (Sync Only Changed Files)
+      - name: Deploy via SFTP (Sync Only Changed Files & Remove Old)
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
           SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
         run: |
-          echo "Deploying changed files..."
+          echo "Deploying only changed files..."
           lftp -c "
             open -u $SFTP_USER,$SFTP_PASS sftp://$SFTP_HOST
-            mirror -R --verbose --only-newer ./ /www \
+            mirror -R --verbose --only-newer --parallel=4 ./ /www \
               --exclude-glob .git/ \
               --exclude-glob .gitignore \
               --exclude-glob README.md \
@@ -26,6 +26,39 @@
               --exclude-glob *.log \
               --exclude-glob .DS_Store \
               --exclude-glob Thumbs.db \
-              --exclude-glob '.*'  # Exclude hidden files unless explicitly needed
+              --exclude-glob '.*'
+            bye
+          "
+
+      - name: Cleanup Remote Server (Remove Files Deleted in Repo)
+        env:
+          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
+        run: |
+          echo "Removing old files that no longer exist in the repository..."
+          lftp -c "
+            open -u $SFTP_USER,$SFTP_PASS sftp://$SFTP_HOST
+            cd /www
+            mirror -e --delete --verbose ./ /www \
+              --exclude-glob .git/ \
+              --exclude-glob .gitignore \
+              --exclude-glob README.md \
+              --exclude-glob LICENSE \
+              --exclude-glob *.yml \
+              --exclude-glob *.sh \
+              --exclude-glob node_modules/ \
+              --exclude-glob package.json \
+              --exclude-glob package-lock.json \
+              --exclude-glob yarn.lock \
+              --exclude-glob tests/ \
+              --exclude-glob __tests__/ \
+              --exclude-glob coverage/ \
+              --exclude-glob .vscode/ \
+              --exclude-glob .idea/ \
+              --exclude-glob *.log \
+              --exclude-glob .DS_Store \
+              --exclude-glob Thumbs.db \
+              --exclude-glob '.*'
             bye
           "
