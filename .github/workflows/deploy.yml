@@ -3,47 +3,30 @@ name: Deploy to SFTP Server
 on:
   push:
     branches:
-      - main  # Triggers deployment on push to the 'main' branch
+      - main
 
 jobs:
   deploy:
-    name: SFTP Deploy
+    name: Deploy via lftp Mirror
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Generate Directory Structure for SFTP
+      - name: Install lftp
         run: |
-          # Extract directory structure from repo
-          find . -type d | sed 's|^\./||' > directories.txt
-          # Remove empty lines
-          sed -i '/^$/d' directories.txt
-          echo "Directory structure prepared."
+          sudo apt-get update
+          sudo apt-get install -y lftp
 
-      - name: Ensure Directories Exist on Remote Server
+      - name: Deploy via lftp mirror
         run: |
-          mkdir -p ~/.ssh
-          echo "sftp.domeneshop.no ssh-rsa RHq/z1yca8CXL89ZORqN6u3CovMnUo1QTEAnYNTyBxA=" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          
-          # Read directories from the file and create them remotely
-          while read -r dir; do
-            if [ ! -z "$dir" ]; then
-              sshpass -p "${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp -o StrictHostKeyChecking=no -P 22 ${{ secrets.DOMENESHOP_SFTP_USERNAME }}@sftp.domeneshop.no <<EOF
-              mkdir /www/$dir
+          lftp -u ${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }} sftp://sftp.domeneshop.no <<-'EOF'
+          set sftp:connect-program "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22"
+          mirror -R --delete --verbose \
+            --exclude-glob .git* \
+            --exclude-glob secrets.json \
+            --exclude-glob '*.env' \
+            ./ /www
+          quit
 EOF
-            fi
-          done < directories.txt
-
-      - name: Deploy via SFTP (Exclude .gitignore Files)
-        run: |
-          # Use rsync to sync files while respecting .gitignore
-          rsync -av --progress --delete \
-            --exclude-from=.gitignore \
-            --exclude 'secrets.json' \
-            --exclude '*.env' \
-            --exclude '.git' \
-            -e "sshpass -p '${{ secrets.DOMENESHOP_SFTP_PASSWORD }}' sftp -o StrictHostKeyChecking=no -P 22" \
-            ./ ${{ secrets.DOMENESHOP_SFTP_USERNAME }}@sftp.domeneshop.no:/www
