@@ -5,10 +5,17 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
-      - 'public/**'
-      - 'static/**'
-      - 'templates/**'
+      - 'www/**'
+
+# Limit permissions to minimum required
+permissions:
+  contents: read
+  deployments: write
+
+# Ensure only one deployment runs at a time
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -18,103 +25,29 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Restore SSH Known Hosts Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.ssh/known_hosts
-          key: known-hosts-${{ secrets.DOMENESHOP_SFTP_HOST }}
-
       - name: Install Required Packages
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Configure SSH Authentication
-        env:
-          SFTP_PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          echo "$SFTP_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh -o StrictHostKeyChecking=accept-new $SFTP_USER@$SFTP_HOST "echo 'SSH authentication works!'"
-
-      - name: Verify SSH Fingerprint
-        env:
-          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
-          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
-        run: |
-          echo "Fetching SSH key from server..."
-          ssh-keyscan -H $SFTP_HOST >> ~/.ssh/known_hosts
-
-          echo "Received SSH fingerprint from server:"
-          ssh-keygen -lf ~/.ssh/known_hosts | tee received_fingerprint.log
-
-          echo "Expected SSH fingerprint: $SSH_FINGERPRINT"
-
-          if ! grep -q "$SSH_FINGERPRINT" received_fingerprint.log; then
-            echo "Error: Host key does not match expected fingerprint!"
-            exit 1
-          fi
-          echo "Fingerprint verified."
-
-      - name: Generate `.lftpignore` (Exclusion Rules)
-        run: |
-          cat <<EOF > .lftpignore
-          .git/
-          .gitignore
-          README.md
-          LICENSE
-          *.yml
-          *.sh
-          node_modules/
-          package.json
-          package-lock.json
-          yarn.lock
-          tests/
-          __tests__/
-          coverage/
-          .vscode/
-          .idea/
-          *.log
-          .DS_Store
-          Thumbs.db
-          .*
-          EOF
-
-      - name: Perform Dry-Run Deployment
-        env:
-          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
-          SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-        run: |
-          echo "Performing a dry run..."
-          lftp -u "$SFTP_USER",sftp://$SFTP_HOST <<EOF
-            mirror -R --dry-run --verbose --parallel=4 --exclude-glob-from .lftpignore ./ /www
-            bye
-          EOF
-
-      - name: Deploy Only Changed Files
-        env:
-          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
-          SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-        run: |
-          echo "Uploading only changed files..."
-          lftp -u "$SFTP_USER",sftp://$SFTP_HOST <<EOF
-            mirror -R --verbose --only-newer --parallel=4 --exclude-glob-from .lftpignore ./ /www
-            bye
-          EOF
-
-      - name: Cleanup Remote Server (Remove Files Deleted in Repo)
-        env:
-          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
-          SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-        run: |
-          echo "Removing files that no longer exist in the repository..."
-          lftp -u "$SFTP_USER",sftp://$SFTP_HOST <<EOF
-            cd /www
-            mirror -e --delete --verbose --exclude-glob-from .lftpignore ./ .
-            bye
-          EOF
-
-      - name: Upload Deployment Logs
-        uses: actions/upload-artifact@v3
+      - name: Deploy Files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          name: lftp-logs
-          path: lftp.log
+          server: ftp.domeneshop.no
+          username: ${{ secrets.DOMENESHOP_FTP_USERNAME }}
+          password: ${{ secrets.DOMENESHOP_FTP_PASSWORD }}
+          protocol: ftp
+          server-dir: /www/
+          local-dir: ./www/
+          include: |
+            **/*.html
+            **/*.css
+            **/*.js
+            **/*.png
+            **/*.jpg
+            **/*.jpeg
+            **/*.gif
+            **/*.svg
+            **/*.ico
+            **/*.txt
+            **/*.xml
+            **/*.pdf
+            **/*.webp

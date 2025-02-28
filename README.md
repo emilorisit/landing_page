@@ -1,6 +1,16 @@
 # Personal Homepage
 
-A minimalist personal homepage showcasing professional and social media profiles with a clean, lightweight design.
+A lightweight personal homepage optimized for Domeneshop hosting, featuring a clean and responsive design for professional and social media profile presentation.
+
+## Repository Structure
+
+```
+www/              # Mirror of the server's /www directory
+├── index.html    # Main HTML file
+├── style.css     # Global styles
+└── static/       # Static assets
+    └── css/      # Additional CSS files
+```
 
 ## Development
 
@@ -29,11 +39,11 @@ To add these secrets securely:
 - Never commit sensitive information (passwords, API keys, etc.) to the repository
 - Secrets are automatically masked in GitHub Actions logs
 - The deployment workflow has limited permissions and runs in isolation
-- Sensitive files and directories are excluded from deployment
+- Only whitelisted file types are included in deployment
 - Only one deployment can run at a time to prevent conflicts
 
-The deployment workflow will automatically copy the website files to the `/www` directory on your Domeneshop hosting.
+The deployment workflow will automatically copy the website files from the `www` directory to the `/www` directory on your Domeneshop hosting.
 
 ## Local Development
 
-To test the website locally, simply open `index.html` in your web browser.
+To test the website locally, simply open `www/index.html` in your web browser.
