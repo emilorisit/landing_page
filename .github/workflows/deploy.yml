@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'static/**'
+      - 'templates/**'
 
 jobs:
   deploy:
@@ -13,90 +18,103 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install LFTP
+      - name: Restore SSH Known Hosts Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.ssh/known_hosts
+          key: known-hosts-${{ secrets.DOMENESHOP_SFTP_HOST }}
+
+      - name: Install Required Packages
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Add SSH fingerprint to known_hosts
+      - name: Configure SSH Authentication
+        env:
+          SFTP_PRIVATE_KEY: ${{ secrets.SFTP_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SFTP_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh -o StrictHostKeyChecking=accept-new $SFTP_USER@$SFTP_HOST "echo 'SSH authentication works!'"
+
+      - name: Verify SSH Fingerprint
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
         run: |
-          echo "Ensuring SSH directory exists..."
-          mkdir -p ~/.ssh
-
           echo "Fetching SSH key from server..."
-          ssh-keyscan -H $SFTP_HOST > ~/.ssh/known_hosts
+          ssh-keyscan -H $SFTP_HOST >> ~/.ssh/known_hosts
 
           echo "Received SSH fingerprint from server:"
           ssh-keygen -lf ~/.ssh/known_hosts | tee received_fingerprint.log
 
           echo "Expected SSH fingerprint: $SSH_FINGERPRINT"
 
-          echo "Verifying fingerprint..."
           if ! grep -q "$SSH_FINGERPRINT" received_fingerprint.log; then
             echo "Error: Host key does not match expected fingerprint!"
             exit 1
           fi
           echo "Fingerprint verified."
 
+      - name: Generate `.lftpignore` (Exclusion Rules)
+        run: |
+          cat <<EOF > .lftpignore
+          .git/
+          .gitignore
+          README.md
+          LICENSE
+          *.yml
+          *.sh
+          node_modules/
+          package.json
+          package-lock.json
+          yarn.lock
+          tests/
+          __tests__/
+          coverage/
+          .vscode/
+          .idea/
+          *.log
+          .DS_Store
+          Thumbs.db
+          .*
+          EOF
+
+      - name: Perform Dry-Run Deployment
+        env:
+          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+        run: |
+          echo "Performing a dry run..."
+          lftp -u "$SFTP_USER",sftp://$SFTP_HOST <<EOF
+            mirror -R --dry-run --verbose --parallel=4 --exclude-glob-from .lftpignore ./ /www
+            bye
+          EOF
+
       - name: Deploy Only Changed Files
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-          SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
         run: |
           echo "Uploading only changed files..."
-          lftp -u "$SFTP_USER","$SFTP_PASS" sftp://$SFTP_HOST <<EOF
-            mirror -R --verbose --only-newer --parallel=4 ./ /www \
-              --exclude-glob .git/ \
-              --exclude-glob .gitignore \
-              --exclude-glob README.md \
-              --exclude-glob LICENSE \
-              --exclude-glob *.yml \
-              --exclude-glob *.sh \
-              --exclude-glob node_modules/ \
-              --exclude-glob package.json \
-              --exclude-glob package-lock.json \
-              --exclude-glob yarn.lock \
-              --exclude-glob tests/ \
-              --exclude-glob __tests__/ \
-              --exclude-glob coverage/ \
-              --exclude-glob .vscode/ \
-              --exclude-glob .idea/ \
-              --exclude-glob *.log \
-              --exclude-glob .DS_Store \
-              --exclude-glob Thumbs.db \
-              --exclude-glob '.*'
+          lftp -u "$SFTP_USER",sftp://$SFTP_HOST <<EOF
+            mirror -R --verbose --only-newer --parallel=4 --exclude-glob-from .lftpignore ./ /www
             bye
           EOF
 
-      - name: Cleanup Remote Server (Remove Deleted Files)
+      - name: Cleanup Remote Server (Remove Files Deleted in Repo)
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-          SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
         run: |
           echo "Removing files that no longer exist in the repository..."
-          lftp -u "$SFTP_USER","$SFTP_PASS" sftp://$SFTP_HOST <<EOF
-            mirror -e --delete --verbose ./ /www \
-              --exclude-glob .git/ \
-              --exclude-glob .gitignore \
-              --exclude-glob README.md \
-              --exclude-glob LICENSE \
-              --exclude-glob *.yml \
-              --exclude-glob *.sh \
-              --exclude-glob node_modules/ \
-              --exclude-glob package.json \
-              --exclude-glob package-lock.json \
-              --exclude-glob yarn.lock \
-              --exclude-glob tests/ \
-              --exclude-glob __tests__/ \
-              --exclude-glob coverage/ \
-              --exclude-glob .vscode/ \
-              --exclude-glob .idea/ \
-              --exclude-glob *.log \
-              --exclude-glob .DS_Store \
-              --exclude-glob Thumbs.db \
-              --exclude-glob '.*'
+          lftp -u "$SFTP_USER",sftp://$SFTP_HOST <<EOF
+            cd /www
+            mirror -e --delete --verbose --exclude-glob-from .lftpignore ./ .
             bye
           EOF
+
+      - name: Upload Deployment Logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: lftp-logs
+          path: lftp.log
