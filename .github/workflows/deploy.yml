@@ -1,52 +1,31 @@
-name: Deploy to Domeneshop
+name: Deploy to SFTP Server
 
 on:
   push:
     branches:
-      - main
-
-# Limit permissions to minimum required
-permissions:
-  contents: read
-  deployments: write
-
-# Ensure only one deployment runs at a time
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+      - main  # Triggers deployment on push to the 'main' branch
 
 jobs:
   deploy:
+    name: SFTP Deploy
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-      - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
-      - name: Create Remote Directories (if needed)
+      - name: Add Domeneshop SFTP Server to Known Hosts
         run: |
-          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" ftp://ftp.domeneshop.no -e "
-          set ftp:ssl-allow no;
-          mkdir -p /www/static /www/templates;
-          bye"
+          mkdir -p ~/.ssh
+          echo "sftp.domeneshop.no ssh-rsa RHq/z1yca8CXL89ZORqN6u3CovMnUo1QTEAnYNTyBxA=" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
-      - name: Deploy Files via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.5
         with:
-          server: ftp.domeneshop.no
+          server: sftp.domeneshop.no
           username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
           password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
-          protocol: ftp
-          server-dir: /www/
-          local-dir: ./
-          exclude: |
-            **/.git*
-            **/.git*/**
-            .env
-            __pycache__/**
-            *.pyc
-            **/.env*
-            **/*.key
-            **/*.pem
-            **/secrets.*
+          port: 22
+          local_path: './*'
+          remote_path: '/www'
