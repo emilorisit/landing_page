@@ -7,26 +7,15 @@ on:
 
 jobs:
   deploy:
-    name: Deploy via lftp Mirror
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
       - name: Install lftp
         run: |
-          sudo apt-get update
-          sudo apt-get install -y lftp
+          sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Deploy via lftp mirror
+      - name: Deploy to SFTP Server
         run: |
-          lftp -u ${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }} sftp://sftp.domeneshop.no <<-'EOF'
-          set sftp:connect-program "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22"
-          mirror -R --delete --verbose \
-            --exclude-glob .git* \
-            --exclude-glob secrets.json \
-            --exclude-glob '*.env' \
-            ./ /www
-          quit
-EOF
+          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://sftp.domeneshop.no -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 22\"; mirror -R --delete --verbose --exclude-glob .git* --exclude-glob secrets.json --exclude-glob '*.env' ./ /www; quit"
