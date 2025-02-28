@@ -21,6 +21,9 @@ jobs:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
         run: |
+          echo "Ensuring SSH directory exists..."
+          mkdir -p ~/.ssh
+
           echo "Fetching SSH key from server..."
           ssh-keyscan -H $SFTP_HOST > ~/.ssh/known_hosts
 
