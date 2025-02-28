@@ -37,6 +37,7 @@ jobs:
           protocol: ftp
           server-dir: /www/
           local-dir: ./www/
+          dangerous-clean-slate: true
           include: |
             **/*.html
             **/*.css
