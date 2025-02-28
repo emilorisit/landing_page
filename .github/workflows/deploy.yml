@@ -14,13 +14,36 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Deploy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.5
-        with:
-          server: sftp.domeneshop.no
-          username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-          password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
-          port: 22
-          local_path: './*'
-          remote_path: '/www'
-          sftp_only: true  # ✅ Force SFTP-only mode to prevent SSH execution
+      - name: Generate Directory Structure for SFTP
+        run: |
+          # Extract directory structure from repo
+          find . -type d | sed 's|^\./||' > directories.txt
+          # Remove empty lines
+          sed -i '/^$/d' directories.txt
+          echo "Directory structure prepared."
+
+      - name: Ensure Directories Exist on Remote Server
+        run: |
+          mkdir -p ~/.ssh
+          echo "sftp.domeneshop.no ssh-rsa RHq/z1yca8CXL89ZORqN6u3CovMnUo1QTEAnYNTyBxA=" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          
+          # Read directories from the file and create them remotely
+          while read -r dir; do
+            if [ ! -z "$dir" ]; then
+              sshpass -p "${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp -o StrictHostKeyChecking=no -P 22 ${{ secrets.DOMENESHOP_SFTP_USERNAME }}@sftp.domeneshop.no <<EOF
+              mkdir /www/$dir
+EOF
+            fi
+          done < directories.txt
+
+      - name: Deploy via SFTP (Exclude .gitignore Files)
+        run: |
+          # Use rsync to sync files while respecting .gitignore
+          rsync -av --progress --delete \
+            --exclude-from=.gitignore \
+            --exclude 'secrets.json' \
+            --exclude '*.env' \
+            --exclude '.git' \
+            -e "sshpass -p '${{ secrets.DOMENESHOP_SFTP_PASSWORD }}' sftp -o StrictHostKeyChecking=no -P 22" \
+            ./ ${{ secrets.DOMENESHOP_SFTP_USERNAME }}@sftp.domeneshop.no:/
