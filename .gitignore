@@ -33,6 +33,7 @@ venv/
 .pytest_cache/
 uv.lock
 generated-icon.png
+main.py
 
 # Logs
 *.log

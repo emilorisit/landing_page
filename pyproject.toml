@@ -1,8 +1,12 @@
 [project]
 name = "repl-nix-workspace"
 version = "0.1.0"
-description = "Add your description here"
+description = "A static website served with Flask"
 requires-python = ">=3.11"
 dependencies = [
     "flask>=3.1.0",
+    "werkzeug>=3.0.0",
 ]
+
+[tool.pip]
+dependencies = []
