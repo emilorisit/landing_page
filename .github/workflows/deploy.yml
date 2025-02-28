@@ -4,16 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'www/**'
-
-permissions:
-  contents: read
-  deployments: write
-
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -57,7 +47,7 @@ jobs:
         run: |
           echo "Syncing files with remote server..."
           lftp -u "$SFTP_USER","$SFTP_PASS" sftp://$SFTP_HOST <<EOF
-            # Upload new and changed files
+            # Upload new and changed files from local www/ to remote /www
             mirror -R --verbose --only-newer --parallel=4 www/ /www
 
             # Remove files on server that were deleted locally
