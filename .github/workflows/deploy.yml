@@ -9,36 +9,32 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Check out the repository code.
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up known_hosts with pre-approved fingerprint(s).
-      # You must add the complete known_hosts entry (the server’s public key in known_hosts format)
-      # to the secret DOMENESHOP_KNOWN_HOSTS. This file should contain the expected fingerprints as provided by Domeneshop.
+      # Preconfigure SSH to verify the server certificate using the provided fingerprints.
       - name: Set up known_hosts
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DOMENESHOP_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      # Step 3: Deploy files via SFTP using appleboy's sftp-action.
+      # Deploy using SamKirkland's FTP-Deploy-Action, which supports SFTP,
+      # handles remote folder creation, and leverages your secure secrets.
       - name: Deploy via SFTP
-        uses: appleboy/sftp-action@master
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          host: ${{ secrets.DOMENESHOP_SFTP_HOST }}
-          username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-          password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
-          port: 22
-          local: ./
-          remote: /www
+          ftp-server: sftp://${{ secrets.DOMENESHOP_SFTP_HOST }}
+          ftp-username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          ftp-password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
+          protocol: sftp
+          local-dir: ./
+          server-dir: www
 
-      # Step 4: Log success.
       - name: Deployment Success Logging
         if: ${{ success() }}
         run: echo "Deployment completed successfully."
 
-      # Step 5: Log errors if any.
       - name: Deployment Error Logging
         if: ${{ failure() }}
         run: echo "Deployment failed. Please check the logs for details."
