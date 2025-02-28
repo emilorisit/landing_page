@@ -18,10 +18,10 @@ jobs:
       - name: Add SFTP Server to Known Hosts
         run: |
           mkdir -p ~/.ssh
-          # Trust the server using its RSA fingerprint
+          # Add Domeneshop’s SFTP server fingerprint (RSA)
           echo "sftp.domeneshop.no ssh-rsa RHq/z1yca8CXL89ZORqN6u3CovMnUo1QTEAnYNTyBxA=" > ~/.ssh/known_hosts
           cat ~/.ssh/known_hosts
 
       - name: Deploy to SFTP Server via lftp
         run: |
-          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://sftp.domeneshop.no -e "set sftp:connect-program \"ssh -p 22\"; mirror -R --delete --verbose --exclude-glob .git* --exclude-glob secrets.json --exclude-glob '*.env' ./ /www; quit"
+          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://sftp.domeneshop.no -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -o PreferredAuthentications=password -o HostKeyAlgorithms=+ssh-rsa -p 22\"; mirror -R --delete --verbose --exclude-glob .git* --exclude-glob secrets.json --exclude-glob '*.env' ./ /www; quit"
