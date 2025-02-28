@@ -1,4 +1,4 @@
-name: Deploy to SFTP Server
+name: Deploy to Domeneshop
 
 on:
   push:
@@ -9,19 +9,55 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+      # Step 1: Checkout your repository so we can access its content.
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
+      # Step 2: Verify that the local "www" folder exists.
+      - name: Verify local www folder
+        run: |
+          if [ -d "www" ]; then
+            echo "Local www folder found."
+          else
+            echo "Error: Local www folder not found. Exiting." >&2
+            exit 1
+          fi
 
-      - name: Add SFTP Server to Known Hosts
+      # Step 3: Set up SSH known_hosts for a secure connection.
+      - name: Set up SSH known hosts
         run: |
           mkdir -p ~/.ssh
-          # Add Domeneshop’s SFTP server fingerprint (RSA)
-          echo "sftp.domeneshop.no ssh-rsa RHq/z1yca8CXL89ZORqN6u3CovMnUo1QTEAnYNTyBxA=" > ~/.ssh/known_hosts
-          cat ~/.ssh/known_hosts
+          echo "Fetching SSH fingerprint for ${{ secrets.DOMENESHOP_SFTP_HOST }}..."
+          ssh-keyscan -H "${{ secrets.DOMENESHOP_SFTP_HOST }}" >> ~/.ssh/known_hosts || {
+            echo "Error: Failed to fetch SSH fingerprint." >&2
+            exit 1
+          }
+          echo "SSH known_hosts updated."
 
-      - name: Deploy to SFTP Server via lftp
+      # Step 4: Ensure that the remote "www" folder exists.
+      # This uses sshpass to log in with a password and run 'mkdir -p www' on the remote host.
+      - name: Ensure remote www folder exists
+        env:
+          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
         run: |
-          lftp -u "${{ secrets.DOMENESHOP_SFTP_USERNAME }},${{ secrets.DOMENESHOP_SFTP_PASSWORD }}" sftp://sftp.domeneshop.no -e "set sftp:connect-program \"ssh -o StrictHostKeyChecking=yes -o UserKnownHostsFile=~/.ssh/known_hosts -o PreferredAuthentications=password -o HostKeyAlgorithms=+ssh-rsa -p 22\"; mirror -R --delete --verbose --exclude-glob .git* --exclude-glob secrets.json --exclude-glob '*.env' ./ /www; quit"
+          echo "Ensuring remote www folder exists on $SFTP_HOST..."
+          sudo apt-get update -qq && sudo apt-get install -y sshpass > /dev/null
+          sshpass -p "$SFTP_PASS" ssh -o StrictHostKeyChecking=yes "$SFTP_USER@$SFTP_HOST" 'mkdir -p www' || {
+            echo "Error: Failed to create remote www folder." >&2
+            exit 1
+          }
+          echo "Remote www folder verified."
+
+      # Step 5: Deploy files from the local "www" folder to the remote "www" folder.
+      # The action will recursively copy files and create missing subdirectories as needed.
+      - name: Deploy files via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
+          port: 22
+          source: "www/"
+          target: "www/"
