@@ -12,11 +12,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # ensure you have at least the previous commit for diff
+
+      - name: Check for changes in www folder
+        id: check_www_changes
+        run: |
+          # Compare the latest commit with the previous commit
+          if git diff --quiet ${{ github.event.before }} ${{ github.sha }} -- www/; then
+            echo "No changes detected in www folder."
+            echo "deploy=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected in www folder."
+            echo "deploy=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Install LFTP
+        if: steps.check_www_changes.outputs.deploy == 'true'
         run: sudo apt-get update && sudo apt-get install -y lftp
 
       - name: Add SSH fingerprint to known_hosts
+        if: steps.check_www_changes.outputs.deploy == 'true'
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
@@ -40,6 +56,7 @@ jobs:
           echo "Fingerprint verified."
 
       - name: Sync www directory with server
+        if: steps.check_www_changes.outputs.deploy == 'true'
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}

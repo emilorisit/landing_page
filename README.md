@@ -32,7 +32,7 @@ To test the website locally:
 
 ## Deployment
 
-The website is automatically deployed to Domeneshop via SFTP when changes are pushed to the main branch. The deployment is handled by GitHub Actions.
+The website is automatically deployed to Domeneshop via SFTP when changes are pushed to the main branch. The deployment workflow is optimized to only run when changes are detected in the www/ directory.
 
 ### Required Secrets
 
@@ -43,12 +43,20 @@ To enable automatic deployment, set up the following secrets in your GitHub repo
 3. `DOMENESHOP_SFTP_PASSWORD`: Your Domeneshop SFTP password
 4. `SSH_FINGERPRINT`: SSH fingerprint for secure connection verification
 
-
 ### Security Features
 
 - Secure SFTP deployment with SSH fingerprint verification
-- Parallel file transfers for efficient updates
+- Efficient deployment with git diff filtering
+- Parallel file transfers for faster updates
 - Automatic cleanup of removed files
 - GitHub Actions secrets for credential management
+
+### Deployment Optimization
+
+The deployment workflow includes several optimizations:
+- Git diff filtering to only deploy when changes are detected in www/
+- Parallel file transfers (4 concurrent transfers)
+- Single mirror command that handles both uploads and deletions
+- Automatic verification of SSH host fingerprints
 
 The deployment workflow ensures that the remote `/www` directory exactly mirrors your local `www/` directory, maintaining a clean and efficient deployment process.
