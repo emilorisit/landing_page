@@ -39,13 +39,13 @@ jobs:
           fi
           echo "Fingerprint verified."
 
-      - name: Deploy Files and Handle Deletions
+      - name: Deploy Files from www
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
           SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
         run: |
-          echo "Syncing files with remote server..."
+          echo "Uploading files from www/ to /www..."
           lftp -u "$SFTP_USER","$SFTP_PASS" sftp://$SFTP_HOST <<EOF
             # Upload new and changed files from local www/ to remote /www
             mirror -R --verbose --only-newer --parallel=4 www/ /www
