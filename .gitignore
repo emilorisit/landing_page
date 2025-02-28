@@ -31,6 +31,8 @@ replit.nix
 .pythonlibs/
 venv/
 .pytest_cache/
+uv.lock
+generated-icon.png
 
 # Logs
 *.log
