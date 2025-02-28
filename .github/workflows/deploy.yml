@@ -16,24 +16,35 @@ jobs:
       - name: Install LFTP
         run: sudo apt-get update && sudo apt-get install -y lftp
 
+      - name: Add SSH fingerprint to known_hosts
+        env:
+          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
+        run: |
+          echo "Fetching SSH key from server..."
+          ssh-keyscan -H $SFTP_HOST > ~/.ssh/known_hosts
+
+          echo "Received SSH fingerprint from server:"
+          ssh-keygen -lf ~/.ssh/known_hosts | tee received_fingerprint.log
+
+          echo "Expected SSH fingerprint: $SSH_FINGERPRINT"
+
+          echo "Verifying fingerprint..."
+          if ! grep -q "$SSH_FINGERPRINT" received_fingerprint.log; then
+            echo "Error: Host key does not match expected fingerprint!"
+            exit 1
+          fi
+          echo "Fingerprint verified."
+
       - name: Deploy via SFTP
         env:
           SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
           SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
           SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
-          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
         run: |
-          echo "Verifying SSH fingerprint..."
-          ssh-keyscan -H $SFTP_HOST >> known_hosts
-          if ! grep -q "$SSH_FINGERPRINT" known_hosts; then
-            echo "Error: Host key does not match expected fingerprint!"
-            exit 1
-          fi
-
           echo "Deploying files..."
           lftp -c "
             open -u $SFTP_USER,$SFTP_PASS sftp://$SFTP_HOST
             mirror -R --delete --verbose ./ /www
             bye
           "
-
