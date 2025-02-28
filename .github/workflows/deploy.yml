@@ -46,4 +46,4 @@ EOF
             --exclude '*.env' \
             --exclude '.git' \
             -e "sshpass -p '${{ secrets.DOMENESHOP_SFTP_PASSWORD }}' sftp -o StrictHostKeyChecking=no -P 22" \
-            ./ ${{ secrets.DOMENESHOP_SFTP_USERNAME }}@sftp.domeneshop.no:/
+            ./ ${{ secrets.DOMENESHOP_SFTP_USERNAME }}@sftp.domeneshop.no:/www
