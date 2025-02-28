@@ -2,48 +2,53 @@
 
 A lightweight personal homepage optimized for Domeneshop hosting, featuring a clean and responsive design for professional and social media profile presentation.
 
-## Repository Structure
+## Project Structure
 
 ```
-www/              # Mirror of the server's /www directory
-├── index.html    # Main HTML file
-├── style.css     # Global styles
-└── static/       # Static assets
-    └── css/      # Additional CSS files
+www/                # Root directory for web content
+├── index.html     # Main HTML file with profile and social links
+└── style.css      # Custom styles for the homepage
 ```
+
+## Features
+
+- Minimalist, responsive design using Bootstrap 5
+- Professional profile presentation
+- Integrated social media links (LinkedIn, GitHub, Twitter, Instagram)
+- Font Awesome icons for social media buttons
+- Automatic deployment to Domeneshop via SFTP
 
 ## Development
 
-This is a static website built with HTML, CSS, and Font Awesome icons. The site is hosted on Domeneshop and automatically deployed via FTP when changes are pushed to the main branch.
+This is a static website built with HTML and CSS, using Bootstrap for styling and Font Awesome for icons. The site is hosted on Domeneshop and automatically deployed when changes are pushed to the main branch.
+
+### Local Development
+
+To test the website locally:
+1. Clone the repository
+2. Open `www/index.html` in your web browser
+3. Make changes to files in the `www/` directory
+4. Commit and push to deploy changes
 
 ## Deployment
 
-This website is automatically deployed to Domeneshop via FTP when changes are pushed to the main branch. The deployment is handled by GitHub Actions.
+The website is automatically deployed to Domeneshop via SFTP when changes are pushed to the main branch. The deployment is handled by GitHub Actions.
 
-### Setup Requirements
+### Required Secrets
 
-To enable automatic deployment, you need to set up the following secrets in your GitHub repository:
+To enable automatic deployment, set up the following secrets in your GitHub repository:
 
-1. `DOMENESHOP_FTP_USERNAME`: Your Domeneshop FTP username
-2. `DOMENESHOP_FTP_PASSWORD`: Your Domeneshop FTP password
+1. `DOMENESHOP_SFTP_HOST`: Your Domeneshop SFTP host
+2. `DOMENESHOP_SFTP_USERNAME`: Your Domeneshop SFTP username
+3. `DOMENESHOP_SFTP_PASSWORD`: Your Domeneshop SFTP password
+4. `SSH_FINGERPRINT`: SSH fingerprint for secure connection verification
 
-To add these secrets securely:
-1. Go to your GitHub repository
-2. Click on "Settings"
-3. Navigate to "Secrets and variables" → "Actions"
-4. Click "New repository secret"
-5. Add each of the secrets mentioned above
 
-### Security Best Practices
+### Security Features
 
-- Never commit sensitive information (passwords, API keys, etc.) to the repository
-- Secrets are automatically masked in GitHub Actions logs
-- The deployment workflow has limited permissions and runs in isolation
-- Only whitelisted file types are included in deployment
-- Only one deployment can run at a time to prevent conflicts
+- Secure SFTP deployment with SSH fingerprint verification
+- Parallel file transfers for efficient updates
+- Automatic cleanup of removed files
+- GitHub Actions secrets for credential management
 
-The deployment workflow will automatically copy the website files from the `www` directory to the `/www` directory on your Domeneshop hosting.
-
-## Local Development
-
-To test the website locally, simply open `www/index.html` in your web browser.
+The deployment workflow ensures that the remote `/www` directory exactly mirrors your local `www/` directory, maintaining a clean and efficient deployment process.
