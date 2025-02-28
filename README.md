@@ -12,15 +12,16 @@ www/                # Root directory for web content
 
 ## Features
 
-- Minimalist, responsive design using Bootstrap 5
-- Professional profile presentation
-- Integrated social media links (LinkedIn, GitHub, Twitter, Instagram)
+- Clean, minimalist design powered by Bootstrap and custom CSS
+- Professional profile presentation with circular avatar
+- Responsive layout that works on all devices
+- Integrated social media links (LinkedIn, GitHub, X/Twitter, Instagram)
 - Font Awesome icons for social media buttons
 - Automatic deployment to Domeneshop via SFTP
 
 ## Development
 
-This is a static website built with HTML and CSS, using Bootstrap for styling and Font Awesome for icons. The site is hosted on Domeneshop and automatically deployed when changes are pushed to the main branch.
+This is a static website built with HTML and CSS, using Bootstrap from CDN for responsive layout and Font Awesome for icons. The site is hosted on Domeneshop and automatically deployed when changes are pushed to the main branch.
 
 ### Local Development
 
