@@ -1,4 +1,4 @@
-name: Deploy to Domeneshop via SFTP
+name: Deploy to Domeneshop
 
 on:
   push:
@@ -12,29 +12,44 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Preconfigure SSH to verify the server certificate using the provided fingerprints.
-      - name: Set up known_hosts
+      - name: Verify and Setup Known Hosts
+        id: known_hosts_setup
+        shell: bash
         run: |
+          # Create SSH directory if it doesn't exist
           mkdir -p ~/.ssh
-          echo "${{ secrets.DOMENESHOP_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
 
-      # Deploy using SamKirkland's FTP-Deploy-Action, which supports SFTP,
-      # handles remote folder creation, and leverages your secure secrets.
-      - name: Deploy via SFTP
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+          echo "Scanning scp.domeneshop.no for its public key..."
+          # Scan the host for its RSA key and save it temporarily
+          ssh-keyscan -t rsa scp.domeneshop.no > known_hosts.txt 2>/dev/null
+
+          # Extract the fingerprint from the scanned key (strip the "SHA256:" prefix)
+          ACTUAL_FINGERPRINT=$(ssh-keygen -lf known_hosts.txt | awk '{print $2}' | sed 's/SHA256://')
+          echo "Expected fingerprint: ${{ secrets.SSH_FINGERPRINT }}"
+          echo "Actual fingerprint: $ACTUAL_FINGERPRINT"
+
+          # Compare the actual fingerprint with the expected one
+          if [ "$ACTUAL_FINGERPRINT" != "${{ secrets.SSH-fingerprint }}" ]; then
+            echo "Fingerprint mismatch! Aborting deployment."
+            exit 1
+          fi
+
+          # Save the verified known_hosts entry as an output for later steps
+          echo "KNOWN_HOSTS<<EOF" >> $GITHUB_OUTPUT
+          cat known_hosts.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Deploy via Rsync over SFTP
+        uses: appleboy/rsync-action@master
         with:
-          ftp-server: sftp://${{ secrets.DOMENESHOP_SFTP_HOST }}
-          ftp-username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
-          ftp-password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
-          protocol: sftp
-          local-dir: ./
-          server-dir: www
-
-      - name: Deployment Success Logging
-        if: ${{ success() }}
-        run: echo "Deployment completed successfully."
-
-      - name: Deployment Error Logging
-        if: ${{ failure() }}
-        run: echo "Deployment failed. Please check the logs for details."
+          host: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          username: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          password: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
+          # The local directory to sync (adjust as needed)
+          source: "./"
+          # The target remote folder
+          target: "/www"
+          # Archive mode, verbose, compress and delete removed files
+          args: "-avz --delete"
+          # Pass in the verified known_hosts content so that SSH accepts the fingerprint automatically
+          known_hosts: ${{ steps.known_hosts_setup.outputs.KNOWN_HOSTS }}
