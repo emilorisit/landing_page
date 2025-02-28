@@ -7,12 +7,10 @@ on:
     paths:
       - 'www/**'
 
-# Limit permissions to minimum required
 permissions:
   contents: read
   deployments: write
 
-# Ensure only one deployment runs at a time
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -25,30 +23,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Required Packages
+      - name: Install LFTP
         run: sudo apt-get update && sudo apt-get install -y lftp
 
-      - name: Deploy Files via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ftp.domeneshop.no
-          username: ${{ secrets.DOMENESHOP_FTP_USERNAME }}
-          password: ${{ secrets.DOMENESHOP_FTP_PASSWORD }}
-          protocol: ftp
-          server-dir: /www/
-          local-dir: ./www/
-          dangerous-clean-slate: true
-          include: |
-            **/*.html
-            **/*.css
-            **/*.js
-            **/*.png
-            **/*.jpg
-            **/*.jpeg
-            **/*.gif
-            **/*.svg
-            **/*.ico
-            **/*.txt
-            **/*.xml
-            **/*.pdf
-            **/*.webp
+      - name: Add SSH fingerprint to known_hosts
+        env:
+          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          SSH_FINGERPRINT: ${{ secrets.SSH_FINGERPRINT }}
+        run: |
+          echo "Ensuring SSH directory exists..."
+          mkdir -p ~/.ssh
+
+          echo "Fetching SSH key from server..."
+          ssh-keyscan -H $SFTP_HOST > ~/.ssh/known_hosts
+
+          echo "Received SSH fingerprint from server:"
+          ssh-keygen -lf ~/.ssh/known_hosts | tee received_fingerprint.log
+
+          echo "Expected SSH fingerprint: $SSH_FINGERPRINT"
+
+          echo "Verifying fingerprint..."
+          if ! grep -q "$SSH_FINGERPRINT" received_fingerprint.log; then
+            echo "Error: Host key does not match expected fingerprint!"
+            exit 1
+          fi
+          echo "Fingerprint verified."
+
+      - name: Deploy Files and Handle Deletions
+        env:
+          SFTP_HOST: ${{ secrets.DOMENESHOP_SFTP_HOST }}
+          SFTP_USER: ${{ secrets.DOMENESHOP_SFTP_USERNAME }}
+          SFTP_PASS: ${{ secrets.DOMENESHOP_SFTP_PASSWORD }}
+        run: |
+          echo "Syncing files with remote server..."
+          lftp -u "$SFTP_USER","$SFTP_PASS" sftp://$SFTP_HOST <<EOF
+            # Upload new and changed files
+            mirror -R --verbose --only-newer --parallel=4 www/ /www
+
+            # Remove files on server that were deleted locally
+            cd /www
+            mirror -e --delete --verbose www/ .
+            bye
+          EOF
