@@ -34,9 +34,9 @@ Preferred communication style: Simple, everyday language.
 - **SFTP Deployment**: Automated deployment pipeline (triggered by repository changes)
 
 ### Third-Party Services
-- **LinkedIn CDN**: Profile image hosting and delivery
-- **Social Media Platforms**: Direct links to LinkedIn, GitHub, X (Twitter), Instagram
+- **Social Media Platforms**: Direct links to X (Twitter), Instagram
 - **Email Service**: contact.scheming298@passinbox.com for contact functionality
+- **Local Assets**: Profile image hosted statically in www/ directory
 
 ### Development Tools
 - **Git Version Control**: Repository management and deployment triggers
