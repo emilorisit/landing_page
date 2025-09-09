@@ -16,8 +16,6 @@ www/                # Root directory for web content
 - Professional profile presentation with circular avatar
 - Responsive layout optimized for all devices
 - Social media links with consistent styling:
-  - LinkedIn ("in")
-  - GitHub ("⌥")
   - X ("𝕏")
   - Instagram ("ig")
   - Email ("@")
