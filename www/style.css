@@ -66,6 +66,16 @@ h1 {
     transform: scale(1.1);
 }
 
+.emoji-icon {
+    filter: grayscale(1) opacity(0.65);
+    transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.emoji-icon:hover {
+    filter: grayscale(1) opacity(1);
+    transform: scale(1.1);
+}
+
 /* Responsive adjustments */
 @media (max-width: 576px) {
     .social-links {
